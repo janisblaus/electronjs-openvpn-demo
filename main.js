@@ -62,7 +62,7 @@ function initialise(){
 function getOpenVPNPath() {
     switch (process.platform) {
         case 'win32':
-            return app.getAppPath() + '/bin/win'
+            return app.getAppPath() + '/bin/win/openvpn'
             break;
         case 'darwin':
             return '/usr/local/opt/openvpn/sbin/openvpn';
@@ -78,50 +78,55 @@ function startVPNService(){
   * Daemon service ----------------
   */
 
-  if( ovpnConsoleProcess ){
-    return
+  if( !ovpnConsoleProcess ){
+    logThis('Starting VPN Service')
+
+    let args = [
+      '--config', app.getAppPath() + '/config/config.ovpn',
+      '--management', '0.0.0.0', MANAGEMENT_PORT,
+      '--management-hold',
+      '--management-query-passwords'
+    ]
+
+    if( process.platform == 'win32' ){
+      args.push('--register-dns')
+    }
+
+    console.log(getOpenVPNPath())
+
+    ovpnConsoleProcess = execFile( getOpenVPNPath(), args)
+
+    //no need as we get everything from openvpnmanager
+    ovpnConsoleProcess.stdout.on('data', function(data) {
+      logThis('stdout: ' + data);
+    });
+    
+    ovpnConsoleProcess.stderr.on('data', function(data) {
+        logThis('stderr: ' + data)
+    });
+
+    ovpnConsoleProcess.on('close', function(code) {
+        logThis('closing code: ' + code)
+    });
   }
 
-  logThis('Starting VPN Service')
 
-  let args = [
-    '--config', app.getAppPath() + '/config/config.ovpn',
-    '--management', '0.0.0.0', MANAGEMENT_PORT,
-    '--management-hold',
-    '--management-query-passwords',
-    '--register-dns'
-  ]
-
-  ovpnConsoleProcess = execFile( getOpenVPNPath() + '/openvpn',args)
-
-  //no need as we get everything from openvpnmanager
-  //ovpnConsoleProcess.stdout.on('data', function(data) {
-  //  logThis('stdout: ' + data);
-  //});
-  
-  ovpnConsoleProcess.stderr.on('data', function(data) {
-      logThis('stderr: ' + data)
-  });
-
-  ovpnConsoleProcess.on('close', function(code) {
-      logThis('closing code: ' + code)
-  });
 
   /*
   * Manager ----------------
   */
-  if( openvpn ){
-    console.log('openvpn variable is not null')
-    console.log(openvpn)
-    return
+  if( !openvpn ){
+    setTimeout(startManagerService, 3000)
   }
+}
 
+function startManagerService(){
   logThis('Connecting VPN Manager Service')
 
   openvpn = openvpnmanager.connect({
     host: '127.0.0.1',
     port: MANAGEMENT_PORT, //port openvpn management console
-    timeout: 1500, //timeout for connection - optional, will default to 1500ms if undefined
+    timeout: 5500, //timeout for connection - optional, will default to 1500ms if undefined
   })
    
   // will be emited on successful interfacing with openvpn instance
@@ -151,7 +156,6 @@ function startVPNService(){
     console.log(error)
     updateIpAddress()
   })
-
 }
 
 function stopVPNService(){

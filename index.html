@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+    <style>
+      .openvpn-log{
+        height: 450px;
+        font-size:80%;
+        color:white;
+        white-space:nowrap;
+        overflow-x: hidden;
+        overflow-y:scroll;
+        background: #232426;
+        padding:5px;
+        white-space:nowrap;
+      }
+
+    </style>
+  </head>
+  <body>
+    <h1>Current IP: <span class="public-ip">0.0.0.0</span></h1>
+    <h4>bandwidth : Download <span class="bandwidth-in">0</span>  / Upload <span class="bandwidth-out">0</span></h4>
+
+    <button class="connect">Connect</button> <button class="disconnect">Disconnect</button>
+
+    <h4>openvpn log:</h4>
+
+    <div class="openvpn-log"></div>  
+
+    <script>
+      require('./renderer.js')
+    </script>
+  </body>
+</html>
